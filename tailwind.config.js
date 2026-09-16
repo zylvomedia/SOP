@@ -4,44 +4,55 @@ export default {
   theme: {
     extend: {
       colors: {
+        canvas: '#F5F5F7',
+        surface: '#FFFFFF',
         ink: {
-          950: '#0F1A22',
-          900: '#152430',
-          800: '#1D3040',
-          700: '#294357',
-          600: '#3A5A73',
+          950: '#1D1D1F',
+          800: '#3A3A3C',
+          600: '#6E6E73',
+          400: '#A1A1A6',
+          200: '#D2D2D7',
+          100: '#E8E8ED',
         },
-        paper: {
-          100: '#F4F5F2',
-          200: '#ECEEE9',
-          300: '#E1E4DC',
+        blue: {
+          DEFAULT: '#0071E3',
+          light: '#E8F1FD',
+          dark: '#0058B0',
         },
-        signal: {
-          DEFAULT: '#2451C4',
-          light: '#5C7FDB',
-          dim: '#DCE4F7',
+        green: {
+          DEFAULT: '#2FA84F',
+          light: '#E7F7EC',
         },
-        moss: {
-          DEFAULT: '#2E6B4F',
-          light: '#DCEBE2',
+        orange: {
+          DEFAULT: '#FF9500',
+          light: '#FFF3E0',
         },
-        amber: {
-          DEFAULT: '#C1780E',
-          light: '#F5E6CC',
+        purple: {
+          DEFAULT: '#AF52DE',
+          light: '#F5E9FB',
         },
-        rust: {
-          DEFAULT: '#A93F32',
-          light: '#F3DEDA',
+        red: {
+          DEFAULT: '#FF3B30',
+          light: '#FFEBEA',
         },
-        slate: {
-          DEFAULT: '#6B6F76',
-          light: '#E7E7E4',
+        gray: {
+          DEFAULT: '#8E8E93',
+          light: '#F0F0F2',
+        },
+        pink: {
+          DEFAULT: '#FF375F',
+          light: '#FFE8ED',
         },
       },
       fontFamily: {
-        display: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
-        sans: ['"IBM Plex Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(0,0,0,0.04), 0 1px 12px rgba(0,0,0,0.04)',
+        pop: '0 8px 30px rgba(0,0,0,0.12)',
+      },
+      borderRadius: {
+        xl2: '1.25rem',
       },
     },
   },

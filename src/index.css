@@ -12,16 +12,18 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: #F4F5F2;
-  color: #14202A;
+  background: #F5F5F7;
+  color: #1D1D1F;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
 }
 
 ::selection {
-  background: #DCE4F7;
+  background: #E8F1FD;
 }
 
-/* thin scrollbars for a denser, tool-like feel */
+/* thin scrollbars for a cleaner feel */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -30,9 +32,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D3D6CD;
+  background: #D2D2D7;
   border-radius: 999px;
-  border: 2px solid #F4F5F2;
+  border: 2px solid #F5F5F7;
 }
 
 @media (prefers-reduced-motion: reduce) {

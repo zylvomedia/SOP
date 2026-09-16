@@ -23,7 +23,7 @@ const raw = [
     handle: 'maria.ads', name: 'Maria', niche: 'Home services', client: 'GreenLeaf Roofing',
     adCount: 6, vertical: 'home services', proof: '40 assets, two days, home services vertical, for a client running $30k/mo',
     status: 'Not Responded', stage: 'Follow-up 2', lastInteractionDate: '2026-09-10',
-    source: 'Ad Library — outbound list 14', notes: 'Runs 3 accounts, decent spend signal. Worth a call push.',
+    source: 'Ad Library — outbound list 14', notes: 'Runs 3 accounts, decent spend signal. Worth a call push.', estValue: 3200,
   },
   {
     handle: 'thegrowthbuyer', name: 'Devon', niche: 'DTC e-commerce', client: 'Cinderwood Skincare',
@@ -157,6 +157,29 @@ export const leads = raw.map((r, i) => {
     nextActionDate: tracker.nextActionDate,
     dateTrackerLabel: tracker.label,
     notes: r.notes,
+    estValue: r.estValue ?? Math.round((200 * r.adCount + 800) / 100) * 100,
     messages: buildMessages({ name: r.name, adCount: r.adCount, client: r.client, vertical: r.vertical, proof: r.proof }),
   }
 })
+
+export function nextLeadId(existing) {
+  let max = 0
+  existing.forEach((l) => {
+    const m = /lead-(\d+)/.exec(l.id)
+    if (m) max = Math.max(max, parseInt(m[1], 10))
+  })
+  return `lead-${String(max + 1).padStart(3, '0')}`
+}
+
+export function makeBlankMessages() {
+  return {
+    first_dm: '',
+    who_you_are: '',
+    proof_line: '',
+    follow_up_1: '',
+    follow_up_2: '',
+    follow_up_3: '',
+    follow_up_4: '',
+    follow_up_5: '',
+  }
+}
