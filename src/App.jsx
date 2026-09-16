@@ -7,6 +7,7 @@ import PipelineTab from './components/PipelineTab.jsx'
 import AnalyticsTab from './components/AnalyticsTab.jsx'
 import SopTab from './components/SopTab.jsx'
 import ImportModal from './components/ImportModal.jsx'
+import AddLeadModal from './components/AddLeadModal.jsx'
 import { LeadDrawer } from './components/Shared.jsx'
 import { formatDate } from './lib/cadence.js'
 
@@ -31,6 +32,7 @@ export default function App() {
   const [leads, setLeads] = useState(() => loadLeads(seedLeads))
   const [selected, setSelected] = useState(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
 
   useEffect(() => {
     saveLeads(leads)
@@ -38,6 +40,15 @@ export default function App() {
 
   function handleImport(newLeads) {
     setLeads((prev) => [...newLeads, ...prev])
+  }
+
+  function handleAddLead(lead) {
+    setLeads((prev) => [lead, ...prev])
+  }
+
+  function handleUpdateMessages(id, messages) {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, messages } : l)))
+    setSelected((s) => (s?.id === id ? { ...s, messages } : s))
   }
 
   function handleDelete(id) {
@@ -101,6 +112,7 @@ export default function App() {
               onSelect={setSelected}
               onDelete={handleDelete}
               onOpenImport={() => setImportOpen(true)}
+              onOpenAdd={() => setAddOpen(true)}
               today={today}
             />
           )}
@@ -110,9 +122,14 @@ export default function App() {
         </div>
       </main>
 
-      {selected ? <LeadDrawer lead={selected} onClose={() => setSelected(null)} onDelete={handleDelete} today={today} /> : null}
+      {selected ? (
+        <LeadDrawer lead={selected} onClose={() => setSelected(null)} onDelete={handleDelete} onUpdateMessages={handleUpdateMessages} today={today} />
+      ) : null}
       {importOpen ? (
         <ImportModal existingLeads={leads} onImport={handleImport} onClose={() => setImportOpen(false)} today={today} />
+      ) : null}
+      {addOpen ? (
+        <AddLeadModal existingLeads={leads} onAdd={handleAddLead} onClose={() => setAddOpen(false)} today={today} />
       ) : null}
     </div>
   )

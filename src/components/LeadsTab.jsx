@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Upload, Eye, Trash2, Search } from 'lucide-react'
+import { Upload, Eye, Trash2, Search, Plus } from 'lucide-react'
 import { STATUSES, STAGES } from '../data/mockData.js'
 import { StatusBadge, StageBadge, NextAction, LeadAvatar, EstValue } from './Shared.jsx'
 import { formatDate } from '../lib/cadence.js'
 
-export default function LeadsTab({ leads, onSelect, onDelete, onOpenImport, today }) {
+export default function LeadsTab({ leads, onSelect, onDelete, onOpenImport, onOpenAdd, today }) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [stageFilter, setStageFilter] = useState('All')
@@ -77,8 +77,14 @@ export default function LeadsTab({ leads, onSelect, onDelete, onOpenImport, toda
         <span className="text-xs text-ink-400">{filtered.length} of {leads.length}</span>
 
         <button
+          onClick={onOpenAdd}
+          className="ml-auto flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-4 py-2 text-sm font-medium text-ink-800 transition hover:bg-ink-100"
+        >
+          <Plus size={15} /> Add lead
+        </button>
+        <button
           onClick={onOpenImport}
-          className="ml-auto flex items-center gap-1.5 rounded-lg bg-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-dark"
+          className="flex items-center gap-1.5 rounded-lg bg-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-dark"
         >
           <Upload size={15} /> Import leads
         </button>

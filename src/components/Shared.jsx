@@ -1,4 +1,5 @@
-import { Clock, MessageCircle, Phone, CheckCircle2, XCircle, MinusCircle, AtSign, ExternalLink, X } from 'lucide-react'
+import { useState } from 'react'
+import { Clock, MessageCircle, Phone, CheckCircle2, XCircle, MinusCircle, AtSign, ExternalLink, X, Pencil, Check } from 'lucide-react'
 import { formatDate, daysBetween } from '../lib/cadence.js'
 
 export const STATUS_META = {
@@ -77,9 +78,30 @@ const MESSAGE_ROWS = [
   { key: 'follow_up_5', label: 'T9 · Follow-up 5 (day 16)' },
 ]
 
-export function LeadDrawer({ lead, onClose, onDelete, today }) {
+export function LeadDrawer({ lead, onClose, onDelete, onUpdateMessages, today }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(null)
+
   if (!lead) return null
+
+  function startEditing() {
+    setDraft({ ...lead.messages })
+    setEditing(true)
+  }
+
+  function saveEditing() {
+    onUpdateMessages(lead.id, draft)
+    setEditing(false)
+    setDraft(null)
+  }
+
+  function cancelEditing() {
+    setEditing(false)
+    setDraft(null)
+  }
+
   const hasMessages = Object.values(lead.messages || {}).some((v) => v && v.trim())
+
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-ink-950/30 backdrop-blur-[2px]" onClick={onClose} />
@@ -135,8 +157,37 @@ export function LeadDrawer({ lead, onClose, onDelete, today }) {
         </div>
 
         <div className="px-6 py-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-400">Message sequence</p>
-          {hasMessages ? (
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Message sequence</p>
+            {editing ? (
+              <div className="flex gap-1.5">
+                <button onClick={cancelEditing} className="rounded-lg px-2.5 py-1 text-xs font-medium text-ink-600 hover:bg-ink-100">Cancel</button>
+                <button onClick={saveEditing} className="flex items-center gap-1 rounded-lg bg-blue px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-dark">
+                  <Check size={12} /> Save
+                </button>
+              </div>
+            ) : (
+              <button onClick={startEditing} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-blue hover:bg-blue-light">
+                <Pencil size={12} /> {hasMessages ? 'Edit' : 'Write'}
+              </button>
+            )}
+          </div>
+
+          {editing ? (
+            <div className="space-y-3">
+              {MESSAGE_ROWS.map((row) => (
+                <div key={row.key}>
+                  <label className="mb-1 block text-[11px] font-medium text-ink-400">{row.label}</label>
+                  <textarea
+                    value={draft[row.key] || ''}
+                    onChange={(e) => setDraft((d) => ({ ...d, [row.key]: e.target.value }))}
+                    rows={2}
+                    className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-ink-950 outline-none focus:border-blue focus:ring-2 focus:ring-blue/15"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : hasMessages ? (
             <div className="space-y-3">
               {MESSAGE_ROWS.map((row) => (
                 lead.messages[row.key] ? (
