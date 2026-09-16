@@ -1,6 +1,22 @@
 import { useState } from 'react'
-import { Clock, MessageCircle, Phone, CheckCircle2, XCircle, MinusCircle, AtSign, ExternalLink, X, Pencil, Check } from 'lucide-react'
+import { Clock, MessageCircle, Phone, CheckCircle2, XCircle, MinusCircle, AtSign, ExternalLink, X, Pencil, Check, Paperclip, FileText, Trash2 } from 'lucide-react'
 import { formatDate, daysBetween } from '../lib/cadence.js'
+
+const MAX_FILE_BYTES = 3 * 1024 * 1024 // 3MB per file — keeps localStorage usage sane
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+function formatTimestamp(iso) {
+  const d = new Date(iso)
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
 
 export const STATUS_META = {
   'Not Responded': { icon: Clock, classes: 'bg-gray-light text-gray' },
@@ -67,6 +83,117 @@ export function NextAction({ lead, today }) {
   return <span className={`text-xs ${tone}`}>{text}</span>
 }
 
+function NotesAndMedia({ lead, onUpdateLead }) {
+  const [noteDraft, setNoteDraft] = useState('')
+  const noteLog = lead.noteLog || []
+  const media = lead.media || []
+
+  function addNote() {
+    if (!noteDraft.trim()) return
+    const entry = { id: `note-${Date.now()}`, text: noteDraft.trim(), addedAt: new Date().toISOString() }
+    onUpdateLead(lead.id, { noteLog: [entry, ...noteLog] })
+    setNoteDraft('')
+  }
+
+  function deleteNote(id) {
+    onUpdateLead(lead.id, { noteLog: noteLog.filter((n) => n.id !== id) })
+  }
+
+  async function addFiles(fileList) {
+    const files = Array.from(fileList)
+    const accepted = []
+    for (const file of files) {
+      if (file.size > MAX_FILE_BYTES) {
+        alert(`${file.name} is over 3MB and was skipped — this app stores media in the browser, so keep files small.`)
+        continue
+      }
+      const dataUrl = await fileToDataUrl(file)
+      accepted.push({ id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name: file.name, type: file.type, dataUrl, addedAt: new Date().toISOString() })
+    }
+    if (accepted.length) onUpdateLead(lead.id, { media: [...accepted, ...media] })
+  }
+
+  function deleteMedia(id) {
+    onUpdateLead(lead.id, { media: media.filter((m) => m.id !== id) })
+  }
+
+  return (
+    <div className="border-t border-ink-100 px-6 py-4">
+      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-400">Notes</p>
+      <div className="mb-3 flex gap-2">
+        <textarea
+          value={noteDraft}
+          onChange={(e) => setNoteDraft(e.target.value)}
+          placeholder="Log a call, a reply, anything worth remembering…"
+          rows={2}
+          className="flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-blue focus:ring-2 focus:ring-blue/15"
+        />
+      </div>
+      <button
+        onClick={addNote}
+        disabled={!noteDraft.trim()}
+        className="mb-4 rounded-lg bg-blue px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Add note
+      </button>
+
+      {noteLog.length > 0 ? (
+        <div className="mb-6 space-y-2.5">
+          {noteLog.map((n) => (
+            <div key={n.id} className="flex items-start justify-between gap-2 rounded-xl border border-ink-100 bg-canvas px-3.5 py-2.5">
+              <div>
+                <p className="text-sm leading-relaxed text-ink-950">{n.text}</p>
+                <p className="mt-1 text-[11px] text-ink-400">{formatTimestamp(n.addedAt)}</p>
+              </div>
+              <button onClick={() => deleteNote(n.id)} className="shrink-0 rounded-md p-1 text-ink-400 hover:bg-ink-100 hover:text-red" aria-label="Delete note">
+                <X size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mb-6 text-sm text-ink-400">No notes yet.</p>
+      )}
+
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Media</p>
+        <label className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-blue hover:bg-blue-light">
+          <Paperclip size={12} /> Add media
+          <input type="file" multiple accept="image/*,.pdf" className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
+        </label>
+      </div>
+
+      {media.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2.5">
+          {media.map((m) => (
+            <div key={m.id} className="group relative aspect-square overflow-hidden rounded-xl border border-ink-100 bg-canvas">
+              {m.type.startsWith('image/') ? (
+                <a href={m.dataUrl} target="_blank" rel="noreferrer">
+                  <img src={m.dataUrl} alt={m.name} className="h-full w-full object-cover" />
+                </a>
+              ) : (
+                <a href={m.dataUrl} download={m.name} className="flex h-full flex-col items-center justify-center gap-1.5 px-2 text-center">
+                  <FileText size={22} className="text-ink-400" />
+                  <span className="line-clamp-2 text-[10px] text-ink-600">{m.name}</span>
+                </a>
+              )}
+              <button
+                onClick={() => deleteMedia(m.id)}
+                className="absolute right-1 top-1 rounded-full bg-ink-950/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                aria-label="Remove media"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-ink-400">No screenshots or files attached yet.</p>
+      )}
+    </div>
+  )
+}
+
 const MESSAGE_ROWS = [
   { key: 'first_dm', label: 'T1 · Opener (first DM)' },
   { key: 'who_you_are', label: 'T2 · Who you are' },
@@ -78,7 +205,7 @@ const MESSAGE_ROWS = [
   { key: 'follow_up_5', label: 'T9 · Follow-up 5 (day 16)' },
 ]
 
-export function LeadDrawer({ lead, onClose, onDelete, onUpdateMessages, today }) {
+export function LeadDrawer({ lead, onClose, onDelete, onUpdateLead, today }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(null)
 
@@ -90,7 +217,7 @@ export function LeadDrawer({ lead, onClose, onDelete, onUpdateMessages, today })
   }
 
   function saveEditing() {
-    onUpdateMessages(lead.id, draft)
+    onUpdateLead(lead.id, { messages: draft })
     setEditing(false)
     setDraft(null)
   }
@@ -205,7 +332,9 @@ export function LeadDrawer({ lead, onClose, onDelete, onUpdateMessages, today })
           )}
         </div>
 
-        <div className="mt-auto flex justify-end border-t border-ink-100 px-6 py-4">
+        <NotesAndMedia lead={lead} onUpdateLead={onUpdateLead} />
+
+        <div className="flex justify-end border-t border-ink-100 px-6 py-4">
           <button
             onClick={() => onDelete(lead.id)}
             className="rounded-lg px-3.5 py-2 text-sm font-medium text-red hover:bg-red-light"

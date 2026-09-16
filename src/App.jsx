@@ -35,7 +35,10 @@ export default function App() {
   const [addOpen, setAddOpen] = useState(false)
 
   useEffect(() => {
-    saveLeads(leads)
+    const ok = saveLeads(leads)
+    if (!ok) {
+      console.warn('Local storage is full — the most recent change (likely a media attachment) may not have saved. Try removing some media to free up space.')
+    }
   }, [leads])
 
   function handleImport(newLeads) {
@@ -46,14 +49,20 @@ export default function App() {
     setLeads((prev) => [lead, ...prev])
   }
 
-  function handleUpdateMessages(id, messages) {
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, messages } : l)))
-    setSelected((s) => (s?.id === id ? { ...s, messages } : s))
+  function handleUpdateLead(id, patch) {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+    setSelected((s) => (s?.id === id ? { ...s, ...patch } : s))
   }
 
   function handleDelete(id) {
     setLeads((prev) => prev.filter((l) => l.id !== id))
     setSelected((s) => (s?.id === id ? null : s))
+  }
+
+  function handleBulkDelete(ids) {
+    const idSet = new Set(ids)
+    setLeads((prev) => prev.filter((l) => !idSet.has(l.id)))
+    setSelected((s) => (s && idSet.has(s.id) ? null : s))
   }
 
   function handleResetSample() {
@@ -111,6 +120,7 @@ export default function App() {
               leads={leads}
               onSelect={setSelected}
               onDelete={handleDelete}
+              onBulkDelete={handleBulkDelete}
               onOpenImport={() => setImportOpen(true)}
               onOpenAdd={() => setAddOpen(true)}
               today={today}
@@ -123,7 +133,7 @@ export default function App() {
       </main>
 
       {selected ? (
-        <LeadDrawer lead={selected} onClose={() => setSelected(null)} onDelete={handleDelete} onUpdateMessages={handleUpdateMessages} today={today} />
+        <LeadDrawer lead={selected} onClose={() => setSelected(null)} onDelete={handleDelete} onUpdateLead={handleUpdateLead} today={today} />
       ) : null}
       {importOpen ? (
         <ImportModal existingLeads={leads} onImport={handleImport} onClose={() => setImportOpen(false)} today={today} />

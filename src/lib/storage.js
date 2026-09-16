@@ -15,8 +15,9 @@ export function loadLeads(fallback) {
 export function saveLeads(leads) {
   try {
     localStorage.setItem(KEY, JSON.stringify(leads))
+    return true
   } catch {
-    /* storage unavailable — fail silently, in-memory state still works */
+    return false
   }
 }
 
