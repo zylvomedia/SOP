@@ -375,6 +375,26 @@ function fmtDateTime(iso){ return new Date(iso).toLocaleString("en-US",{month:"s
 function daysDiff(today,d){ return Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/86400000); }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function slug(s){ return String(s).replace(/[^a-zA-Z0-9]+/g,"-"); }
+function parseCsvLine(line){
+  const result = [];
+  let cur = "";
+  let inQuotes = false;
+  for(let i=0;i<line.length;i++){
+    const c = line[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(line[i+1] === '"'){ cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ","){ result.push(cur); cur = ""; }
+      else cur += c;
+    }
+  }
+  result.push(cur);
+  return result.map(s=>s.trim());
+}
 
 /* ---------------- State ---------------- */
 const state = {
@@ -497,12 +517,28 @@ const App = {
   },
   openImport(){ state.showImportModal = true; state.importText=""; render(); },
   closeImport(){ state.showImportModal = false; render(); },
+  handleImportFile(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    if(!/\.csv$/i.test(file.name) && file.type && !file.type.includes("csv") && !file.type.includes("text")){
+      toast("That doesn't look like a CSV file.");
+    }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const ta = document.getElementById("import-text");
+      if(ta) ta.value = String(e.target.result || "");
+      const label = document.getElementById("import-filename");
+      if(label) label.textContent = "Loaded "+file.name+" — review below, then Import";
+    };
+    reader.onerror = ()=>{ toast("Couldn't read that file — try pasting the rows instead."); };
+    reader.readAsText(file);
+  },
   runImport(){
     const text = document.getElementById("import-text").value.trim();
     if(!text) return;
     const lines = text.split(/\r?\n/).filter(l=>l.trim());
     if(lines.length<2){ toast("Add a header row plus at least one lead."); return; }
-    const headers = lines[0].split(",").map(h=>h.trim().toLowerCase());
+    const headers = parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
     const idx = {
       handle: headers.findIndex(h=>h.includes("handle")),
       name: headers.findIndex(h=>h==="name"||h.includes("name")&&!h.includes("client")),
@@ -515,8 +551,8 @@ const App = {
     const newLeads = [];
     let counter = 0;
     for(let i=1;i<lines.length;i++){
-      const cols = lines[i].split(",").map(c=>c.trim());
-      const handle = (cols[idx.handle]||"").replace(/^@/,"");
+      const cols = parseCsvLine(lines[i]);
+      const handle = (cols[idx.handle]||"").replace(/^@/,"").replace(/^https?:\/\/(www\.)?instagram\.com\//i,"").replace(/\/$/,"").split("?")[0];
       if(!handle) continue;
       const status = STATUSES.includes(cols[idx.status]) ? cols[idx.status] : "Not Responded";
       const stage = STAGES.includes(cols[idx.stage]) ? cols[idx.stage] : "Initial Outreach";
@@ -974,7 +1010,13 @@ function renderImportModal(){
   return '<div class="modal-overlay" onclick="if(event.target===this) App.closeImport()"><div class="modal wide">'+
     '<div class="modal-head"><h2>Import leads</h2><button class="btn ghost" onclick="App.closeImport()">'+Icon.x+'</button></div>'+
     '<div class="modal-body">'+
-      '<p style="font-size:12.5px;color:var(--ink-600);margin:0">Paste CSV rows with a header row. Needs a <b>handle</b> column; name, niche, status, stage and date columns are optional.</p>'+
+      '<label style="border:1.5px dashed var(--ink-200);border-radius:12px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:var(--canvas)" onmouseover="this.style.borderColor=\'var(--blue)\'" onmouseout="this.style.borderColor=\'var(--ink-200)\'">'+
+        '<span style="color:var(--blue)">'+Icon.upload+'</span>'+
+        '<span style="font-size:13px;font-weight:600;color:var(--ink-950)">Click to upload a .csv file</span>'+
+        '<span id="import-filename" style="font-size:11.5px;color:var(--ink-400)">or paste rows below</span>'+
+        '<input type="file" accept=".csv,text/csv" style="display:none" onchange="App.handleImportFile(this)">'+
+      '</label>'+
+      '<p style="font-size:12.5px;color:var(--ink-600);margin:0">Needs a <b>handle</b> column; name, niche, status, stage and date columns are optional.</p>'+
       '<textarea id="import-text" rows="8" placeholder="handle,name,niche,status,stage,date&#10;maria.ads,Maria,Home services,Not Responded,Follow-up 2,2026-09-10" style="width:100%;border-radius:10px;border:1px solid var(--ink-200);padding:10px 12px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace;outline:none"></textarea>'+
     '</div><div class="modal-foot"><button class="btn" onclick="App.closeImport()">Cancel</button><button class="btn primary" onclick="App.runImport()">Import</button></div>'+
   '</div></div>';
